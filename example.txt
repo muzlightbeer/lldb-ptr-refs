@@ -1,0 +1,82 @@
+(lldb) settings set target.env-vars MallocStackLogging=1
+(lldb) command script import lldb.macosx.heap
+"crashlog" and "save_crashlog" command installed, use the "--help" option for detailed help
+"malloc_info", "ptr_refs", "cstr_refs", and "objc_refs" commands have been installed, use the "--help" options on these commands for detailed help.
+(lldb) list 1
+   1   	#include <stdio.h>
+   2   	#include <stdlib.h>
+   3   	
+   4   	void function2(char *a) {
+   5   		printf("debug %p\n", a);
+   6   	}
+   7   	
+   8   	void function1(void) {
+   9   		char *p = malloc(8);
+   10  		function2(p);
+(lldb) b 10
+Breakpoint 1: where = a.out`function1 + 27 at test.c:10, address = 0x0000000100000f3b
+(lldb) b 5
+Breakpoint 2: where = a.out`function2 + 19 at test.c:5, address = 0x0000000100000f03
+(lldb) r
+sh(965,0x7fff7e9c5310) malloc: stack logs being written into /tmp/stack-logs.965.10009a000.sh.DXqFmu.index
+sh(965,0x7fff7e9c5310) malloc: recording malloc and VM allocation stacks to disk using standard recorder
+sh(965,0x7fff7e9c5310) malloc: process 945 no longer exists, stack logs deleted from /tmp/stack-logs.945.100003000.a.out.Aklwmc.index
+arch(965,0x7fff7e9c5310) malloc: stack logs being written into /tmp/stack-logs.965.100008000.arch.dYm66a.index
+arch(965,0x7fff7e9c5310) malloc: recording malloc and VM allocation stacks to disk using standard recorder
+arch(965,0x7fff7e9c5310) malloc: stack logs deleted from /tmp/stack-logs.965.10009a000.sh.DXqFmu.index
+Process 965 launched: './a.out' (x86_64)
+a.out(965,0x7fff7e9c5310) malloc: stack logs being written into /tmp/stack-logs.965.100003000.a.out.9I4AbD.index
+a.out(965,0x7fff7e9c5310) malloc: recording malloc and VM allocation stacks to disk using standard recorder
+a.out(965,0x7fff7e9c5310) malloc: stack logs deleted from /tmp/stack-logs.965.100008000.arch.dYm66a.index
+Process 965 stopped
+* thread #1: tid = 0x8965, 0x0000000100000f3b a.out`function1 + 27 at test.c:10, queue = 'com.apple.main-thread', stop reason = breakpoint 1.1
+    frame #0: 0x0000000100000f3b a.out`function1 + 27 at test.c:10
+   7   	
+   8   	void function1(void) {
+   9   		char *p = malloc(8);
+-> 10  		function2(p);
+   11  	}
+   12  	
+   13  	int main(void) {
+(lldb) x/x &p
+0x7fff5fbffc48: 0x002039c0
+(lldb) c
+Process 965 resuming
+Process 965 stopped
+* thread #1: tid = 0x8965, 0x0000000100000f03 a.out`function2(a=0x00000001002039c0) + 19 at test.c:5, queue = 'com.apple.main-thread', stop reason = breakpoint 2.1
+    frame #0: 0x0000000100000f03 a.out`function2(a=0x00000001002039c0) + 19 at test.c:5
+   2   	#include <stdlib.h>
+   3   	
+   4   	void function2(char *a) {
+-> 5   		printf("debug %p\n", a);
+   6   	}
+   7   	
+   8   	void function1(void) {
+(lldb) p a
+(char *) $1 = 0x00000001002039c0 ""
+(lldb) ptr_refs 0x00000001002039c0
+0x00007fff5fbffc28: stack
+0x00007fff5fbffc48: stack
+0x00007fff5fbffbb8: stack (red zone)
+(lldb) ptr_refs -s 0x00000001002039c0
+0x000000010038e940: malloc(262144) -> 0x100380000 + 59712 
+stack[0]: addr = 0x100380000, type=malloc, frames:
+     [0] 0x00007fff95decb89 libsystem_malloc.dylib`malloc_zone_calloc + 119
+     [1] 0x00007fff95ded2ca libsystem_malloc.dylib`calloc + 49
+     [2] 0x00007fff95df2c67 libsystem_malloc.dylib`update_cache_for_file_streams + 125
+     [3] 0x00007fff95df356a libsystem_malloc.dylib`__mach_stack_logging_enumerate_records + 85
+     [4] 0x1001bf101
+     [5] 0x0000000100000f50 a.out`main at test.c:13
+     [6] 0x0000000100000f44 a.out`function1 + 36 at test.c:11
+     [7] 0x0000000100000f59 a.out`main + 9 at test.c:14
+     [8] 0x00007fff94c7f5fd libdyld.dylib`start + 1
+     [9] 0x00007fff7e9c5311 libsystem_pthread.dylib`_thread + 1
+
+0x00007fff5fbffc28: stack
+stack[0]: addr = 0x7fff5fbffc20, type=malloc, frames:
+
+0x00007fff5fbffc48: stack
+stack[0]: addr = 0x7fff5fbffc20, type=malloc, frames:
+
+0x00007fff5fbffbb8: stack (red zone)
+stack[0]: addr = 0x7fff5fbffba0, type=malloc, frames:
